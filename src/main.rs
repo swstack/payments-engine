@@ -1,13 +1,11 @@
-mod payments;
-mod ingestion;
+mod download;
 mod errors;
+mod ingestion;
+mod payments;
 
 use std::env;
 
 fn main() {
-    println!("Hello, world!");
-
     let args: Vec<String> = env::args().collect();
-
-    println!("{:?}", args);
+    
 }
