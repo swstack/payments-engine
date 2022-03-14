@@ -57,3 +57,28 @@ impl PaymentsQueue {
             .pop_front()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    #[tokio::test]
+    async fn test_ingestion_service() {
+        let payments_queue = PaymentsQueue::new();
+        let ingestion_service = IngestionService::new(payments_queue.clone());
+
+        let out = "skip\nfoo\nbar\nbaz";
+        let mut file = NamedTempFile::new().unwrap();
+        file.write_all(out.as_bytes()).unwrap();
+
+        let file_path = file.path().to_str().unwrap();
+        let uri = format!("file://{}", file_path);
+        ingestion_service.submit_payments_csv(&uri).await.unwrap();
+
+        assert_eq!(payments_queue.get_transaction().unwrap(), "foo");
+        assert_eq!(payments_queue.get_transaction().unwrap(), "bar");
+        assert_eq!(payments_queue.get_transaction().unwrap(), "baz");
+    }
+}

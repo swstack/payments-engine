@@ -152,17 +152,20 @@ impl AccountService {
             .cloned()
             .unwrap_or(Account::new(&transaction.client_id));
 
-        account
-            .transactions
-            .insert(transaction.transaction_id, transaction.clone());
-
         match transaction.transaction_type {
             TransactionType::Deposit => {
                 account.available += transaction.amount;
+                account
+                    .transactions
+                    .insert(transaction.transaction_id, transaction.clone());
             }
             TransactionType::Withdrawal => {
                 if account.available >= transaction.amount {
                     account.available -= transaction.amount;
+
+                    account
+                        .transactions
+                        .insert(transaction.transaction_id, transaction.clone());
                 }
             }
             TransactionType::Dispute => {
@@ -235,5 +238,23 @@ impl AccountService {
                 account.locked
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_account_service() {
+        let account_service = AccountService::new();
+        account_service.process_transaction(Transaction::from_str("deposit,3,6,37.0").unwrap()).await.unwrap();
+        account_service.process_transaction(Transaction::from_str("dispute,3,6,0").unwrap()).await.unwrap();
+        account_service.process_transaction(Transaction::from_str("chargeback,3,6,0").unwrap()).await.unwrap();
+        let accounts = account_service.accounts.lock().unwrap().clone();
+        let acct = accounts.get(&3_u16).unwrap();
+        assert_eq!(acct.locked, true);
+        assert_eq!(acct.available, 0.0);
+        assert_eq!(acct.held, 0.0);
     }
 }

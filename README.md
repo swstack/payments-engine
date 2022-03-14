@@ -18,3 +18,8 @@ For the purposes of this toy application, the CLI and local filesystem will be t
 * Files can be read from either local filesystem or other storage mechanisms
 * `Payments Queue` is a thread-safe mechanism to queue payments that are ready for processing
 * `Payment Processor`'s are a pool of workers available to process payments and output results
+
+## Other notes/comments
+
+* The application is designed to be easily testable by using dependency injection and [SOLID](https://en.wikipedia.org/wiki/SOLID) principles
+* The parallelism of the application was meant to show scalability and understanding of advanced Rust programming, but actually introduced a ton of complexity related to the chronological order of transactions.

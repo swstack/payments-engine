@@ -22,8 +22,10 @@ async fn main() {
         panic!("{:?}", cli_error);
     }
 
+    // Increase workers for more POWER (keeping at 1 for now for debuggability and lack of testing)
+    let num_workers = 1;
     let mut tasks = Vec::new();
-    for _ in 0..3 {
+    for _ in 0..num_workers {
         let payments_queue_clone = payments_queue.clone();
         let account_service_clone = account_service.clone();
         tasks.push(tokio::spawn(async move {
