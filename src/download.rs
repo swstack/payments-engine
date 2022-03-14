@@ -19,7 +19,7 @@ impl FromStr for UriSchemes {
 }
 
 pub trait Downloadable {
-    fn download(&self) -> Box<dyn Iterator<Item=String>>;
+    fn download(&self) -> Box<dyn Iterator<Item = String>>;
 }
 
 pub struct LocalFile {
@@ -43,13 +43,13 @@ impl S3File {
 }
 
 impl Downloadable for LocalFile {
-    fn download(&self) -> Box<dyn Iterator<Item=String>> {
+    fn download(&self) -> Box<dyn Iterator<Item = String>> {
         todo!()
     }
 }
 
 impl Downloadable for S3File {
-    fn download(&self) -> Box<dyn Iterator<Item=String>> {
+    fn download(&self) -> Box<dyn Iterator<Item = String>> {
         unimplemented!()
     }
 }
