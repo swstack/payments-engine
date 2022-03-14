@@ -1,7 +1,7 @@
 use crate::errors::PaymentError;
 use async_trait::async_trait;
 use std::fs::File;
-use std::io::{BufRead, BufReader, Lines};
+use std::io::{BufRead, BufReader};
 use std::str::FromStr;
 
 pub enum UriSchemes {

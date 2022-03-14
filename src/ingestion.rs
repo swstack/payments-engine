@@ -3,7 +3,6 @@ use crate::errors::PaymentError;
 use std::collections::VecDeque;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 
 pub struct IngestionService {
     pub payments_queue: PaymentsQueue,
@@ -24,7 +23,7 @@ impl IngestionService {
             UriSchemes::S3 => Box::new(S3File::new()),
         };
 
-        for payment_string in downloadable.download().await? {
+        for payment_string in downloadable.download().await?.skip(1) {
             self.payments_queue.publish_transaction(payment_string?);
         }
 
@@ -44,43 +43,17 @@ impl PaymentsQueue {
         }
     }
 
-    pub async fn publish_transaction(&self, message: String) {
+    pub fn publish_transaction(&self, message: String) {
         self.queue
             .lock()
             .expect("Ignore lock poisoning")
             .push_back(message);
     }
 
-    pub async fn get_transaction(&self) -> Option<String> {
-        // Attempt 3 times to get something from the queue, waiting 1 each time
-        for _ in 0..3 {
-            let message = self
-                .queue
-                .lock()
-                .expect("Ignore lock poisoning")
-                .pop_front();
-
-            if message.is_some() {
-                return message;
-            }
-
-            tokio::time::sleep(Duration::from_secs(1)).await;
-        }
-        None
+    pub fn get_transaction(&self) -> Option<String> {
+        self.queue
+            .lock()
+            .expect("Ignore lock poisoning")
+            .pop_front()
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use crate::ingestion::IngestionService;
-//     use crate::payments::PaymentsQueue;
-//
-//     #[tokio::test]
-//     async fn test_submit_payments() {
-//         let payments_queue = PaymentsQueue::new();
-//         let ingestion_service = IngestionService::new(payments_queue);
-//         ingestion_service
-//             .submit_payments_csv("file://foo.csv")
-//             .await;
-//     }
-// }

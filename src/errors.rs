@@ -4,6 +4,7 @@ use std::io::Error;
 pub enum PaymentError {
     InvalidUriScheme(String),
     FileDownloadError(String),
+    PaymentProcessingError(String),
 }
 
 impl From<std::io::Error> for PaymentError {

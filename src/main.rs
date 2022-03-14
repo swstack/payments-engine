@@ -6,31 +6,43 @@ mod payments;
 
 use crate::cli::CLI;
 use crate::ingestion::{IngestionService, PaymentsQueue};
-use crate::payments::PaymentsProcessor;
+use crate::payments::{AccountService, PaymentsProcessor};
 use std::env;
-use std::time::Duration;
 
 #[tokio::main]
 async fn main() {
     let payments_queue = PaymentsQueue::new();
-
-    let mut tasks = Vec::new();
-    for _ in 0..3 {
-        let queue = payments_queue.clone();
-        tasks.push(tokio::spawn(async move {
-            PaymentsProcessor::new(queue).start().await;
-        }));
-    }
+    let account_service = AccountService::new();
 
     let ingestion_service = IngestionService::new(payments_queue.clone());
     let cli = CLI::new(ingestion_service);
-    let result = cli.execute(env::args().collect()).await;
+    let cli_result = cli.execute(env::args().collect()).await;
 
-    if let Some(cli_error) = result.err() {
+    if let Some(cli_error) = cli_result.err() {
         panic!("{:?}", cli_error);
     }
 
-    for t in tasks {
-        t.await;
+    let mut tasks = Vec::new();
+    for _ in 0..3 {
+        let payments_queue_clone = payments_queue.clone();
+        let account_service_clone = account_service.clone();
+        tasks.push(tokio::spawn(async move {
+            let processing_result =
+                PaymentsProcessor::new(payments_queue_clone, account_service_clone)
+                    .start()
+                    .await;
+            if let Some(processing_error) = processing_result.err() {
+                panic!("{:?}", processing_error);
+            }
+        }));
     }
+
+    for t in tasks {
+        let processing_result = t.await;
+        if let Some(processing_error) = processing_result.err() {
+            panic!("{:?}", processing_error);
+        }
+    }
+
+    account_service.print_accounts();
 }
