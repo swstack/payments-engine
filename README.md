@@ -23,3 +23,33 @@ For the purposes of this toy application, the CLI and local filesystem will be t
 
 * The application is designed to be easily testable by using dependency injection and [SOLID](https://en.wikipedia.org/wiki/SOLID) principles
 * The parallelism of the application was meant to show scalability and understanding of advanced Rust programming, but actually introduced a ton of complexity related to the chronological order of transactions.
+
+## Usage example
+
+Run with cargo:
+```
+$ cargo run -- transactions.csv > accounts.csv
+```
+
+Input: (trasnsactions.csv)
+```
+type,client,tx,amount
+deposit,1,1,1.0
+deposit,2,2,2.0
+deposit,1,3,2.0
+withdrawal,1,4,1.5
+withdrawal,2,5,3.0
+deposit,3,6,37.0
+dispute,3,6,0
+chargeback,3,6,0
+dispute,1,1,0
+resolve,1,1,0
+```
+
+Output (accounts.csv):
+```
+client,available,held,total,locked
+3,0,0,0,true
+2,2,0,2,false
+1,1.5,0,1.5,false
+```
