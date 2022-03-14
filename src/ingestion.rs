@@ -1,6 +1,5 @@
 use crate::download::{Downloadable, LocalFile, S3File, UriSchemes};
 use crate::errors::PaymentError;
-use crate::payments::PaymentsQueue;
 use std::collections::VecDeque;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
@@ -25,7 +24,9 @@ impl IngestionService {
             UriSchemes::S3 => Box::new(S3File::new()),
         };
 
-        for payment_string in downloadable.download() {}
+        for payment_string in downloadable.download().await? {
+            self.payments_queue.publish_transaction(payment_string?);
+        }
 
         Ok(())
     }
@@ -43,9 +44,16 @@ impl PaymentsQueue {
         }
     }
 
-    pub async fn get_payment_request(&self) -> Option<String> {
+    pub async fn publish_transaction(&self, message: String) {
+        self.queue
+            .lock()
+            .expect("Ignore lock poisoning")
+            .push_back(message);
+    }
+
+    pub async fn get_transaction(&self) -> Option<String> {
         // Attempt 3 times to get something from the queue, waiting 1 each time
-        for _ in 0..2 {
+        for _ in 0..3 {
             let message = self
                 .queue
                 .lock()

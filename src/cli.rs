@@ -1,3 +1,4 @@
+use crate::errors::PaymentError;
 use crate::IngestionService;
 
 pub struct CLI {
@@ -9,5 +10,11 @@ impl CLI {
         Self { ingestion_service }
     }
 
-    pub fn execute(&self, args: Vec<String>) {}
+    pub async fn execute(&self, args: Vec<String>) -> Result<(), PaymentError> {
+        // Discard first arg which is the cwd
+        // Assume only 1 positional arg which is a file path
+        self.ingestion_service
+            .submit_payments_csv(&format!("file://{}", args[1]))
+            .await
+    }
 }

@@ -1,4 +1,7 @@
 use crate::errors::PaymentError;
+use async_trait::async_trait;
+use std::fs::File;
+use std::io::{BufRead, BufReader, Lines};
 use std::str::FromStr;
 
 pub enum UriSchemes {
@@ -18,8 +21,11 @@ impl FromStr for UriSchemes {
     }
 }
 
+#[async_trait]
 pub trait Downloadable {
-    fn download(&self) -> Box<dyn Iterator<Item = String>>;
+    async fn download(
+        &self,
+    ) -> Result<Box<dyn Iterator<Item = std::io::Result<String>>>, PaymentError>;
 }
 
 pub struct LocalFile {
@@ -42,14 +48,23 @@ impl S3File {
     }
 }
 
+#[async_trait]
 impl Downloadable for LocalFile {
-    fn download(&self) -> Box<dyn Iterator<Item = String>> {
-        todo!()
+    async fn download(
+        &self,
+    ) -> Result<Box<dyn Iterator<Item = std::io::Result<String>>>, PaymentError> {
+        let file = File::open(&self.file_path)
+            .map_err(|e| PaymentError::FileDownloadError(e.to_string()))?;
+        let lines = BufReader::new(file).lines();
+        Ok(Box::new(lines))
     }
 }
 
+#[async_trait]
 impl Downloadable for S3File {
-    fn download(&self) -> Box<dyn Iterator<Item = String>> {
+    async fn download(
+        &self,
+    ) -> Result<Box<dyn Iterator<Item = std::io::Result<String>>>, PaymentError> {
         unimplemented!()
     }
 }
