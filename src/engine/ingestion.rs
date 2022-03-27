@@ -1,16 +1,71 @@
-use crate::download::{Downloadable, LocalFile, S3File, UriSchemes};
-use crate::errors::PaymentError;
-use std::collections::VecDeque;
+use crate::engine::download::{Downloadable, LocalFile, S3File, UriSchemes};
+use crate::engine::errors::PaymentError;
+use crate::engine::payments::AccountService;
+use crate::engine::payments::PaymentsProcessor;
+use std::collections::vec_deque::VecDeque;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
+use tokio::task::JoinHandle;
 
+pub struct IngestionServiceInner {
+    pub payments_queue: PaymentsQueue,
+    pub account_service: AccountService,
+    pub num_workers: u8,
+    pub workers: Vec<JoinHandle<()>>,
+}
+
+#[derive(Clone)]
 pub struct IngestionService {
     pub payments_queue: PaymentsQueue,
+    pub account_service: AccountService,
+    pub num_workers: u8,
+    pub workers: Arc<Mutex<Vec<JoinHandle<()>>>>,
 }
 
 impl IngestionService {
-    pub fn new(payments_queue: PaymentsQueue) -> Self {
-        Self { payments_queue }
+    pub fn new(
+        payments_queue: PaymentsQueue,
+        account_service: AccountService,
+        num_workers: u8,
+    ) -> Self {
+        Self {
+            payments_queue,
+            account_service,
+            num_workers,
+            workers: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
+
+    pub async fn run(&self) {
+        for _ in 0..self.num_workers {
+            let payments_queue_clone = self.payments_queue.clone();
+            let account_service_clone = self.account_service.clone();
+
+            let worker = tokio::spawn(async move {
+                let processing_result =
+                    PaymentsProcessor::new(payments_queue_clone, account_service_clone)
+                        .start()
+                        .await;
+                if let Some(processing_error) = processing_result.err() {
+                    panic!("{:?}", processing_error);
+                }
+            });
+            self.workers.lock().expect("").push(worker);
+        }
+    }
+
+    pub async fn shutdown_gracefully(&self) {
+        for worker in self
+            .workers
+            .lock()
+            .expect("Ignore lock poisoning")
+            .iter_mut()
+        {
+            let processing_result = worker.await;
+            if let Some(processing_error) = processing_result.err() {
+                panic!("{:?}", processing_error);
+            }
+        }
     }
 
     pub async fn submit_payments_csv(&self, uri: &str) -> Result<(), PaymentError> {

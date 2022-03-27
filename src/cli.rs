@@ -1,5 +1,5 @@
-use crate::errors::PaymentError;
-use crate::IngestionService;
+use payments_engine::engine::errors::PaymentError;
+use payments_engine::engine::ingestion::IngestionService;
 
 pub struct CLI {
     ingestion_service: IngestionService,

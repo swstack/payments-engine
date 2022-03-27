@@ -1,5 +1,5 @@
-use crate::errors::PaymentError;
-use crate::ingestion::PaymentsQueue;
+use crate::engine::errors::PaymentError;
+use crate::engine::ingestion::PaymentsQueue;
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
@@ -248,9 +248,18 @@ mod tests {
     #[tokio::test]
     async fn test_account_service() {
         let account_service = AccountService::new();
-        account_service.process_transaction(Transaction::from_str("deposit,3,6,37.0").unwrap()).await.unwrap();
-        account_service.process_transaction(Transaction::from_str("dispute,3,6,0").unwrap()).await.unwrap();
-        account_service.process_transaction(Transaction::from_str("chargeback,3,6,0").unwrap()).await.unwrap();
+        account_service
+            .process_transaction(Transaction::from_str("deposit,3,6,37.0").unwrap())
+            .await
+            .unwrap();
+        account_service
+            .process_transaction(Transaction::from_str("dispute,3,6,0").unwrap())
+            .await
+            .unwrap();
+        account_service
+            .process_transaction(Transaction::from_str("chargeback,3,6,0").unwrap())
+            .await
+            .unwrap();
         let accounts = account_service.accounts.lock().unwrap().clone();
         let acct = accounts.get(&3_u16).unwrap();
         assert_eq!(acct.locked, true);
