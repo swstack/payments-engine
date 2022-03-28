@@ -53,3 +53,7 @@ client,available,held,total,locked
 2,2,0,2,false
 1,1.5,0,1.5,false
 ```
+
+## Requirements questions
+
+* Truncate floats at 4 past decimal or round the value?

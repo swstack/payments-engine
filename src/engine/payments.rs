@@ -118,8 +118,22 @@ impl Account {
         }
     }
 
+    fn truncate(&self, num: &f32) -> f32 {
+        let s = format!("{:.4}", num);
+        s.parse::<f32>().expect("truncate failed")
+    }
+
     pub fn total(&self) -> f32 {
-        self.held + self.available
+        let t = self.held + self.available;
+        self.truncate(&t)
+    }
+
+    pub fn available(&self) -> f32 {
+        self.truncate(&self.available)
+    }
+
+    pub fn held(&self) -> f32 {
+        self.truncate(&self.held)
     }
 }
 
@@ -237,8 +251,8 @@ impl AccountService {
             println!(
                 "{},{},{},{},{}",
                 account.client_id,
-                account.available,
-                account.held,
+                account.available(),
+                account.held(),
                 account.total(),
                 account.locked
             );
@@ -265,10 +279,29 @@ mod tests {
             .process_transaction(Transaction::from_str("chargeback,3,6,0").unwrap())
             .await
             .unwrap();
-        let accounts = account_service.accounts.lock().unwrap().clone();
-        let acct = accounts.get(&3_u16).unwrap();
+        let acct = account_service.get_account(3).unwrap();
         assert_eq!(acct.locked, true);
         assert_eq!(acct.available, 0.0);
         assert_eq!(acct.held, 0.0);
+    }
+
+    #[tokio::test]
+    async fn test_precision_truncated_at_4() {
+        let account_service = AccountService::new();
+        account_service
+            .process_transaction(Transaction::from_str("deposit,1,1,0.12345").unwrap())
+            .await
+            .unwrap();
+        account_service
+            .process_transaction(Transaction::from_str("deposit,2,2,0.12344").unwrap())
+            .await
+            .unwrap();
+        account_service
+            .process_transaction(Transaction::from_str("deposit,3,3,0.12").unwrap())
+            .await
+            .unwrap();
+        assert_eq!(account_service.get_account(1).unwrap().total(), 0.1235);
+        assert_eq!(account_service.get_account(2).unwrap().total(), 0.1234);
+        assert_eq!(account_service.get_account(3).unwrap().total(), 0.12);
     }
 }
