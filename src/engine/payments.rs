@@ -29,7 +29,7 @@ impl PaymentsProcessor {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum TransactionType {
     Deposit,
     Withdrawal,
@@ -56,7 +56,7 @@ impl FromStr for TransactionType {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Transaction {
     transaction_type: TransactionType,
     client_id: u16,
@@ -97,7 +97,7 @@ impl FromStr for Transaction {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Account {
     client_id: u16,
     available: f32,
@@ -223,6 +223,11 @@ impl AccountService {
 
         accounts.insert(transaction.client_id, account);
         Ok(())
+    }
+
+    pub fn get_account(&self, id: u16) -> Option<Account> {
+        let accounts = self.accounts.lock().expect("Ignore lock poisoning");
+        return accounts.get(&id).cloned()
     }
 
     pub fn print_accounts(&self) {

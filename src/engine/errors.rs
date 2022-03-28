@@ -5,6 +5,7 @@ pub enum PaymentError {
     InvalidUriScheme(String),
     FileDownloadError(String),
     PaymentProcessingError(String),
+    CliError(String),
 }
 
 impl From<std::io::Error> for PaymentError {

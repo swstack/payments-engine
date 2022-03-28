@@ -122,7 +122,9 @@ mod tests {
     #[tokio::test]
     async fn test_ingestion_service() {
         let payments_queue = PaymentsQueue::new();
-        let ingestion_service = IngestionService::new(payments_queue.clone());
+        let account_service = AccountService::new();
+        let ingestion_service =
+            IngestionService::new(payments_queue.clone(), account_service.clone(), 1);
 
         let out = "skip\nfoo\nbar\nbaz";
         let mut file = NamedTempFile::new().unwrap();
