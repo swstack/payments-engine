@@ -174,6 +174,10 @@ impl AccountService {
             .cloned()
             .unwrap_or(Account::new(&transaction.client_id));
 
+        if account.locked() {
+            return Ok(())
+        }
+
         match transaction.transaction_type {
             TransactionType::Deposit => {
                 account.available += transaction.amount;
@@ -380,7 +384,28 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_chargeback() {
+    async fn test_cannot_double_dispute() {
+        let account_service = AccountService::new();
+        account_service
+            .process_transaction(Transaction::from_str("deposit,1,1,99").unwrap())
+            .await
+            .unwrap();
+        account_service
+            .process_transaction(Transaction::from_str("dispute,1,1,").unwrap())
+            .await
+            .unwrap();
+        account_service
+            .process_transaction(Transaction::from_str("dispute,1,1,").unwrap())
+            .await
+            .unwrap();
+        assert_eq!(account_service.get_account(1).unwrap().available(), 0.0);
+        assert_eq!(account_service.get_account(1).unwrap().held(), 99.0);
+        assert_eq!(account_service.get_account(1).unwrap().total(), 99.0);
+        assert_eq!(account_service.get_account(1).unwrap().locked(), false);
+    }
+
+    #[tokio::test]
+    async fn test_chargeback_dispute_deposit() {
         let account_service = AccountService::new();
         account_service
             .process_transaction(Transaction::from_str("deposit,1,1,10.0").unwrap())
@@ -390,14 +415,21 @@ mod tests {
             .process_transaction(Transaction::from_str("dispute,1,1,").unwrap())
             .await
             .unwrap();
+        assert_eq!(account_service.get_account(1).unwrap().held(), 10.0);
+        account_service
+            .process_transaction(Transaction::from_str("chargeback,1,1,").unwrap())
+            .await
+            .unwrap();
         assert_eq!(account_service.get_account(1).unwrap().available(), 0.0);
-        // account_service
-        //     .process_transaction(Transaction::from_str("chargeback,3,6,0").unwrap())
-        //     .await
-        //     .unwrap();
-        // let acct = account_service.get_account(3).unwrap();
-        // assert_eq!(acct.locked, true);
-        // assert_eq!(acct.available, 0.0);
-        // assert_eq!(acct.held, 0.0);
+        assert_eq!(account_service.get_account(1).unwrap().held(), 0.0);
+        assert_eq!(account_service.get_account(1).unwrap().total(), 0.0);
+        assert_eq!(account_service.get_account(1).unwrap().locked(), true);
+
+        // Cannot deposit if account locked
+        account_service
+            .process_transaction(Transaction::from_str("deposit,1,1,99.0").unwrap())
+            .await
+            .unwrap();
+        assert_eq!(account_service.get_account(1).unwrap().total(), 0.0);
     }
 }
