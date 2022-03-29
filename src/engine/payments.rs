@@ -312,11 +312,26 @@ mod tests {
             .process_transaction(Transaction::from_str("deposit,1,1,99.0").unwrap())
             .await
             .unwrap();
-        assert_eq!(account_service.get_account(1).unwrap().total(), 99.0);
+        assert_eq!(account_service.get_account(1).unwrap().available(), 99.0);
         account_service
             .process_transaction(Transaction::from_str("dispute,1,2,0").unwrap())
             .await
             .unwrap();
-        assert_eq!(account_service.get_account(1).unwrap().total(), 99.0);
+        assert_eq!(account_service.get_account(1).unwrap().available(), 99.0);
+    }
+
+    #[tokio::test]
+    async fn test_dispute_invalid_client_id() {
+        let account_service = AccountService::new();
+        account_service
+            .process_transaction(Transaction::from_str("deposit,1,1,99.0").unwrap())
+            .await
+            .unwrap();
+        assert_eq!(account_service.get_account(1).unwrap().available(), 99.0);
+        account_service
+            .process_transaction(Transaction::from_str("dispute,2,1,0").unwrap())
+            .await
+            .unwrap();
+        assert_eq!(account_service.get_account(1).unwrap().available(), 99.0);
     }
 }
