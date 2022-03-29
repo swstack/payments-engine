@@ -61,4 +61,13 @@ mod tests {
         assert_eq!(account_service.get_account(3).unwrap().total(), 0.1234);
         assert_eq!(account_service.get_account(4).unwrap().total(), 0.1235);
     }
+
+    #[tokio::test]
+    async fn test_whitespace() {
+        let account_service = run_test_file("whitespace").await;
+        assert_eq!(account_service.get_account(1).unwrap().total(), 8.0);
+        assert_eq!(account_service.get_account(1).unwrap().available(), 8.0);
+        assert_eq!(account_service.get_account(1).unwrap().held(), 0.0);
+        assert_eq!(account_service.get_account(1).unwrap().locked(), false);
+    }
 }

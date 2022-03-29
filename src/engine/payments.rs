@@ -76,17 +76,17 @@ impl FromStr for Transaction {
             ));
         }
 
-        let transaction_type = TransactionType::from_str(parts[0])?;
-        let client_id = parts[1].parse::<u16>().map_err(|_| {
+        let transaction_type = TransactionType::from_str(parts[0].trim())?;
+        let client_id = parts[1].trim().parse::<u16>().map_err(|_| {
             PaymentError::PaymentProcessingError("Could not parse client id".to_string())
         })?;
-        let transaction_id = parts[2].parse::<u32>().map_err(|_| {
+        let transaction_id = parts[2].trim().parse::<u32>().map_err(|_| {
             PaymentError::PaymentProcessingError("Could not parse transaction id".to_string())
         })?;
 
         let mut amount = 0.0;
         if transaction_type == TransactionType::Deposit || transaction_type == TransactionType::Withdrawal {
-            amount = parts[3].parse::<f32>().map_err(|_| {
+            amount = parts[3].trim().parse::<f32>().map_err(|_| {
                 PaymentError::PaymentProcessingError("Could not parse amount".to_string())
             })?;
         }
@@ -431,5 +431,10 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(account_service.get_account(1).unwrap().total(), 0.0);
+    }
+
+    #[tokio::test]
+    async fn test_chargeback_dispute_withdrawal() {
+        // TODO
     }
 }
