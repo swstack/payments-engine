@@ -40,10 +40,10 @@ deposit,1,3,2.0
 withdrawal,1,4,1.5
 withdrawal,2,5,3.0
 deposit,3,6,37.0
-dispute,3,6,0
-chargeback,3,6,0
-dispute,1,1,0
-resolve,1,1,0
+dispute,3,6,
+chargeback,3,6,
+dispute,1,1,
+resolve,1,1,
 ```
 
 Output (accounts.csv):
@@ -58,3 +58,7 @@ client,available,held,total,locked
 
 * Truncate floats at 4 past decimal or round the value? (assuming rounding)
 * Do client ID's need to match for disputed transactions? (assuming yes)
+* Should accept "blank" values for disputes/chargebacks/resolves? (assuming yes)
+* Can you dispute both deposits and withdrawals? (assuming yes, but this is a guess)
+  * In case of disputing a deposit, subtract disputed amount from available and add to held
+  * In case of disputing a withdrawal, add disputed amount to held but do not increase available
