@@ -62,3 +62,6 @@ client,available,held,total,locked
 * Can you dispute both deposits and withdrawals? (assuming yes, but this is a guess)
   * In case of disputing a deposit, subtract disputed amount from available and add to held
   * In case of disputing a withdrawal, add disputed amount to held but do not increase available
+  * How do chargebacks work in case of disputing withdrawal?
+  * How do resolves work in case of disputing withdrawal?
+* Should all transactions fail if account frozen? (assuming yes)
