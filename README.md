@@ -56,4 +56,5 @@ client,available,held,total,locked
 
 ## Requirements questions
 
-* Truncate floats at 4 past decimal or round the value?
+* Truncate floats at 4 past decimal or round the value? (assuming rounding)
+* Do client ID's need to match for disputed transactions? (assuming yes)
