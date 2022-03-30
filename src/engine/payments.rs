@@ -434,7 +434,12 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_resolve_dispute_withdrawal() {
+        // TODO: unsure on correct behavior
+    }
+
+    #[tokio::test]
     async fn test_chargeback_dispute_withdrawal() {
-        // TODO
+        // TODO: unsure on correct behavior
     }
 }
