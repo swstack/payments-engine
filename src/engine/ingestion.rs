@@ -11,7 +11,7 @@ pub struct IngestionServiceInner {
     pub payments_queue: PaymentsQueue,
     pub account_service: AccountService,
     pub num_workers: u8,
-    pub workers: Vec<JoinHandle<()>>,
+    pub workers: Vec<JoinHandle<Result<(), PaymentError>>>,
 }
 
 #[derive(Clone)]
@@ -19,7 +19,7 @@ pub struct IngestionService {
     pub payments_queue: PaymentsQueue,
     pub account_service: AccountService,
     pub num_workers: u8,
-    pub workers: Arc<Mutex<Vec<JoinHandle<()>>>>,
+    pub workers: Arc<Mutex<Vec<JoinHandle<Result<(), PaymentError>>>>>,
 }
 
 impl IngestionService {
@@ -42,30 +42,30 @@ impl IngestionService {
             let account_service_clone = self.account_service.clone();
 
             let worker = tokio::spawn(async move {
-                let processing_result =
-                    PaymentsProcessor::new(payments_queue_clone, account_service_clone)
-                        .start()
-                        .await;
-                if let Some(processing_error) = processing_result.err() {
-                    panic!("{:?}", processing_error);
-                }
+                PaymentsProcessor::new(payments_queue_clone, account_service_clone)
+                    .start()
+                    .await
             });
             self.workers.lock().expect("").push(worker);
         }
     }
 
-    pub async fn shutdown_gracefully(&self) {
+    pub async fn shutdown_gracefully(&self) -> Vec<Result<(), PaymentError>> {
+        let mut results = Vec::new();
         for worker in self
             .workers
             .lock()
             .expect("Ignore lock poisoning")
             .iter_mut()
         {
-            let processing_result = worker.await;
-            if let Some(processing_error) = processing_result.err() {
-                panic!("{:?}", processing_error);
+            match worker.await {
+                Ok(result) => results.push(result),
+                Err(join_error) => results.push(Err(PaymentError::PaymentProcessingError(
+                    format!("{:?}", join_error),
+                ))),
             }
         }
+        return results;
     }
 
     pub async fn submit_payments_csv(&self, uri: &str) -> Result<(), PaymentError> {

@@ -6,7 +6,10 @@ mod tests {
     async fn run_test_file(name: &str) -> AccountService {
         let csv_file = format!("file://tests/resources/{}.csv", name);
         let (ingestion_service, account_service) = payments_engine();
-        ingestion_service.submit_payments_csv(&csv_file).await.unwrap();
+        ingestion_service
+            .submit_payments_csv(&csv_file)
+            .await
+            .unwrap();
         ingestion_service.run().await;
         ingestion_service.shutdown_gracefully().await;
         account_service

@@ -24,6 +24,16 @@ For the purposes of this toy application, the CLI and local filesystem will be t
 * The application is designed to be easily testable by using dependency injection and [SOLID](https://en.wikipedia.org/wiki/SOLID) principles
 * The parallelism of the application was meant to show scalability and understanding of advanced Rust programming, but actually introduced a ton of complexity related to the chronological order of transactions.
 
+### Error handling
+
+* All errors are mapped to some variation of the global error type `PaymentError` so you can use `?` throughout the application.
+* I am using `panic!()` if there is an irrecoverable error, wouldn't do this in a production application
+
+### Testing
+
+* Unit tests exist in the source files and focus on isolated components of the system
+* Integration tests also exist that treat the entire payment engine as a blackbox and there are input files used for testing under `tests/resources`
+
 ## Usage example
 
 Run with cargo:

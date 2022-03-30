@@ -15,6 +15,13 @@ async fn main() {
     }
 
     ingestion_service.run().await;
-    ingestion_service.shutdown_gracefully().await;
+    let results = ingestion_service.shutdown_gracefully().await;
+    for result in results {
+        if let Some(_error) = result.err() {
+            // TODO: If an error happened on one of the workers during
+            // payment processing we could log it here
+        }
+    }
+
     account_service.print_accounts();
 }

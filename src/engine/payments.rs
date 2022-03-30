@@ -85,7 +85,9 @@ impl FromStr for Transaction {
         })?;
 
         let mut amount = 0.0;
-        if transaction_type == TransactionType::Deposit || transaction_type == TransactionType::Withdrawal {
+        if transaction_type == TransactionType::Deposit
+            || transaction_type == TransactionType::Withdrawal
+        {
             amount = parts[3].trim().parse::<f32>().map_err(|_| {
                 PaymentError::PaymentProcessingError("Could not parse amount".to_string())
             })?;
@@ -175,7 +177,7 @@ impl AccountService {
             .unwrap_or(Account::new(&transaction.client_id));
 
         if account.locked() {
-            return Ok(())
+            return Ok(());
         }
 
         match transaction.transaction_type {
@@ -208,7 +210,8 @@ impl AccountService {
                             account
                                 .transactions
                                 .insert(disputed_transaction.transaction_id, disputed_transaction);
-                        } else if disputed_transaction.transaction_type == TransactionType::Deposit {
+                        } else if disputed_transaction.transaction_type == TransactionType::Deposit
+                        {
                             account.available -= disputed_transaction.amount;
                             account.held += disputed_transaction.amount;
                             disputed_transaction.under_dispute = true;
@@ -261,7 +264,7 @@ impl AccountService {
 
     pub fn get_account(&self, id: u16) -> Option<Account> {
         let accounts = self.accounts.lock().expect("Ignore lock poisoning");
-        return accounts.get(&id).cloned()
+        return accounts.get(&id).cloned();
     }
 
     pub fn print_accounts(&self) {
